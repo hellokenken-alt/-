@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>🐾🐱 狸と猫・活動集計</title>
+<style>
+:root{
+  --bg:#f5f7fb;--card:#fff;--text:#18202d;--muted:#667085;--line:#cbd5e1;
+  --head:#5268d8;--head2:#4055bf;--blue:#4f67dc;--blue2:#2743a7;
+  --minus:#253044;--danger:#a9445d;--soft:#eef2ff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP","Yu Gothic",sans-serif}
+body.dark{
+  --bg:#0f141d;--card:#171e29;--text:#eef2f7;--muted:#9aa6b8;--line:#3b4658;
+  --head:#596fd8;--head2:#455ac0;--blue:#6076e2;--blue2:#3049a8;
+  --minus:#222b38;--soft:#1c2740;
+}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.wrap{width:100%;max-width:980px;margin:auto;padding:8px}
+.top{
+  position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 94%,transparent);
+  backdrop-filter:blur(10px);padding:8px 0 6px;
+}
+.title-row{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.title{font-size:25px;font-weight:900;letter-spacing:.2px}
+.period{font-size:12px;color:var(--muted);font-weight:700}
+.desc{font-size:12px;color:var(--muted);line-height:1.45;margin:4px 0 7px}
+.toolbar{display:flex;gap:7px;align-items:center}
+.btn,.sort{
+  border:1px solid var(--line);background:var(--card);color:var(--text);
+  border-radius:15px;min-height:38px;padding:0 13px;font-weight:800;
+}
+.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.manage{background:var(--card)}
+.today{
+  margin-top:7px;border:1px solid var(--line);background:var(--card);border-radius:14px;
+  min-height:58px;display:flex;align-items:center;gap:10px;padding:7px 12px;font-weight:800
+}
+.today .label{white-space:nowrap}
+.counter{display:flex;align-items:center;gap:8px}
+.counter strong{font-size:20px;min-width:20px;text-align:center}
+.round{
+  width:34px;height:34px;border-radius:50%;border:1px solid #4f67c8;
+  display:grid;place-items:center;background:var(--blue2);color:#fff;font-size:23px;line-height:1;padding:0
+}
+.round.plus{background:var(--blue2);border-color:#4f67c8}
+.today .period2{color:var(--muted);font-size:12px;font-weight:600;margin-left:auto;white-space:nowrap}
+.reset{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:13px;padding:7px 10px;font-size:12px;font-weight:800;white-space:nowrap}
+
+.table-wrap{margin-top:7px;border:1px solid var(--line);border-radius:17px;overflow:hidden;background:var(--card)}
+table{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed}
+thead th{
+  position:sticky;top:96px;z-index:10;background:var(--head);color:#fff;height:43px;
+  border-right:1px solid rgba(255,255,255,.45);font-size:14px;font-weight:900
+}
+thead th:last-child{border-right:0}
+th.namecol{width:29.5%}
+th.act{width:12.5%}
+th.contrib{width:8%}
+tbody td{
+  height:64px;border-right:1px solid var(--line);border-top:1px solid var(--line);
+  text-align:center;padding:3px 2px;overflow:hidden
+}
+tbody td:last-child{border-right:0}
+.namecell{text-align:left;padding-left:7px!important}
+.name-main{font-size:16px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.name-actions{display:flex;flex-direction:column;gap:2px;margin-top:2px}
+.small-action{
+  width:58px;height:20px;border-radius:10px;border:1px solid #7890dc;background:#273b82;color:#fff;
+  font-size:9px;font-weight:800;padding:0
+}
+.small-action.remove{background:#6f3041;border-color:#a85b70}
+.activity{display:flex;align-items:center;justify-content:center;gap:2px;min-width:0}
+.activity .mini{
+  flex:0 0 26px;width:26px;height:30px;border-radius:11px;border:1px solid var(--line);
+  background:var(--minus);color:#fff;font-size:18px;line-height:1;padding:0
+}
+.activity .mini.plus{background:var(--blue2);border-color:#4f67c8}
+.value{font-size:15px;font-weight:900;min-width:13px}
+.contrib-value{font-size:17px;font-weight:900}
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:none;padding:18px}
+.modal-back.show{display:flex;align-items:center;justify-content:center}
+.modal{
+  width:min(560px,100%);max-height:88vh;overflow:auto;background:var(--card);color:var(--text);
+  border:1px solid var(--line);border-radius:20px;padding:16px
+}
+.modal h2{margin:0 0 12px;font-size:20px}
+.section{border:1px solid var(--line);border-radius:15px;padding:12px;margin-top:10px}
+.section-title{font-weight:900;margin-bottom:9px}
+.date-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.date-grid label{font-size:11px;color:var(--muted);font-weight:800}
+.date-grid input{width:100%;margin-top:4px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);padding:8px}
+.points{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.points label{font-size:10px;text-align:center;color:var(--muted);font-weight:800}
+.points input{width:100%;margin-top:4px;text-align:center;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--text);padding:6px}
+.manage-row{display:flex;gap:6px;flex-wrap:wrap}
+.member-input{flex:1;min-width:160px;border:1px solid var(--line);border-radius:11px;background:var(--bg);color:var(--text);padding:9px}
+.log-list{display:grid;gap:6px}
+.log{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.log small{color:var(--muted)}
+.log button{border:1px solid #a85b70;background:#6f3041;color:#fff;border-radius:9px;padding:5px 8px;font-size:11px;font-weight:800}
+.modal-footer{display:flex;justify-content:flex-end;gap:7px;margin-top:12px}
+@media(max-width:700px){
+  .wrap{padding:6px}
+  .title{font-size:20px}
+  .period{font-size:10px}
+  .desc{font-size:10px;margin:2px 0 5px}
+  .btn,.sort{min-height:35px;padding:0 10px;font-size:12px}
+  .today{min-height:52px;gap:7px;padding:6px 8px}
+  .today .label{font-size:12px}.today .period2{font-size:10px}
+  .round{width:32px;height:32px}
+  thead th{top:84px;height:39px;font-size:12px}
+  th.namecol{width:29.5%} th.act{width:12.5%} th.contrib{width:8%}
+  tbody td{height:61px;padding:2px 1px}
+  .name-main{font-size:14px}
+  .small-action{width:52px;height:19px;font-size:8px}
+  .activity{gap:1px}
+  .activity .mini{flex-basis:24px;width:24px;height:29px;font-size:17px;border-radius:10px}
+  .value{font-size:14px;min-width:12px}
+  .contrib-value{font-size:16px}
+  .reset{font-size:10px;padding:6px 7px}
+}
+@media(max-width:390px){
+  .title{font-size:18px}.period{font-size:9px}
+  .today .period2{display:none}
+  .activity .mini{flex-basis:21px;width:21px;font-size:15px}
+  .value{font-size:13px}
+  .name-main{font-size:13px}.small-action{width:49px}
+}
+</style>
+
+<style id="contrib-width-final">
+@media (max-width:700px){
+  table{table-layout:fixed!important;width:100%!important}
+  thead th.namecol{width:29.5%!important}
+  thead th.act{width:12.5%!important}
+  thead th.contrib{width:8%!important}
+  tbody td:last-child{width:8%!important}
+}
+</style>
+
+<style id="contrib-one-line">
+thead th.contrib{
+  width:10%!important;
+  min-width:58px!important;
+  white-space:nowrap!important;
+  word-break:keep-all!important;
+  font-size:12px!important;
+}
+@media(max-width:700px){
+  thead th.contrib{
+    width:10%!important;
+    min-width:58px!important;
+    white-space:nowrap!important;
+    word-break:keep-all!important;
+    font-size:11px!important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="title-row">
+      <div class="title">🐾 🐱 狸と猫・活動集計</div>
+      <div class="period" id="periodLabel">集計日：—</div>
+    </div>
+    <div class="desc">＋/−で増減。参加は1人につき1日1回。4:00〜翌3:59の間に活動すると参加が＋1され、同じ日は増えません。個人の参加累計はリセットされません。</div>
+    <div class="toolbar">
+      <select id="sort" class="sort">
+        <option value="name">名前順</option><option value="contrib">貢献度順</option><option value="参加">参加順</option>
+        <option value="募集">募集順</option><option value="リーグ">リーグ順</option><option value="トロ">トロ順</option><option value="腕スタ">腕スタ順</option>
+      </select>
+      <button class="btn primary" id="addMember">＋メンバー追加</button>
+      <button class="btn manage" id="manageBtn">⚙️ 管理</button>
+    </div>
+    <div class="today">
+      <span class="label">今日の参加人数：</span>
+      <div class="counter"><button class="round" id="todayMinus">−</button><strong id="todayNum">0</strong><span>人</span><button class="round plus" id="todayPlus">＋</button></div>
+      <span class="period2">(4:00〜翌3:59)</span>
+      <button class="reset" id="todayReset">調整を0に戻す</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th class="namecol">名前</th><th class="act">募集</th><th class="act">リーグ</th><th class="act">トロ</th><th class="act">腕スタ</th><th class="act">参加</th><th class="contrib">貢献度</th>
+      </tr></thead>
+      <tbody id="memberBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-back" id="modalBack">
+ <div class="modal">
+  <h2>⚙️ 管理</h2>
+
+  <div class="section">
+   <div class="section-title">📅 集計期間</div>
+   <div class="date-grid">
+    <label>開始日<input type="date" id="startDate"></label>
+    <label>終了日<input type="date" id="endDate"></label>
+   </div>
+   <div class="modal-footer"><button class="btn primary" id="saveDates">集計日を保存</button></div>
+  </div>
+
+  <div class="section">
+   <div class="section-title">⭐ 貢献度ポイント設定</div>
+   <div style="font-size:11px;color:var(--muted);margin-bottom:8px">各項目が1増えるごとのポイント。ここを変えると貢献度も自動計算。</div>
+   <div class="points">
+    <label>募集<input id="p募集" type="number" min="0" step="1"></label>
+    <label>リーグ<input id="pリーグ" type="number" min="0" step="1"></label>
+    <label>トロ<input id="pトロ" type="number" min="0" step="1"></label>
+    <label>腕スタ<input id="p腕スタ" type="number" min="0" step="1"></label>
+    <label>参加<input id="p参加" type="number" min="0" step="1"></label>
+   </div>
+   <div class="modal-footer"><button class="btn primary" id="savePoints">ポイント設定を保存</button></div>
+  </div>
+
+  <div class="section">
+   <div class="section-title">🌙 表示</div>
+   <button class="btn" id="darkBtn">🌙 ナイトモード</button>
+  </div>
+
+  <div class="section">
+   <div class="section-title">👤 メンバー追加</div>
+   <div class="manage-row"><input id="newName" class="member-input" placeholder="メンバー名"><button class="btn primary" id="addMember2">追加</button></div>
+  </div>
+
+  <div class="section">
+   <div class="section-title">🗑️ 増加記録・最新5件</div>
+   <div class="log-list" id="logList"></div>
+  </div>
+
+  <div class="section">
+   <div class="section-title">⚠️ 全データ</div>
+   <button class="btn" id="resetAll">全リセット</button>
+  </div>
+
+  <div class="modal-footer"><button class="btn" id="closeModal">閉じる</button></div>
+ </div>
+</div>
+
+<script>
+const KEY="tanukiNekoActivity_v7";
+const defaults={
+ members:[
+  "aba","DODダディ","DR7","Latte","NAO","Nob55","Pスケ","Ronho","ruru","あも","かつ","キイ〜","けんけん","こき兄貴","コレルア","しゅー①","ちろさん","ない","にょきち"
+ ].map((name,i)=>({id:i+1,name,vals:{募集:0,リーグ:0,トロ:0,腕スタ:0,参加:0},excluded:false})),
+ logs:[],todayBase:0,todayManualDelta:0,todayKey:"",startDate:"",endDate:"",
+ points:{募集:1,リーグ:2,トロ:4,腕スタ:3,参加:1},dark:false
+};
+let state=load();
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY));return x?normalize(x):structuredClone(defaults)}catch(e){return structuredClone(defaults)}}
+function normalize(x){
+ x.members=Array.isArray(x.members)?x.members:[];
+ x.logs=Array.isArray(x.logs)?x.logs:[];
+ x.points=Object.assign({募集:1,リーグ:2,トロ:4,腕スタ:3,参加:1},x.points||{});
+ x.todayBase=Number(x.todayBase)||0;x.todayManualDelta=Number(x.todayManualDelta)||0;
+ x.dark=!!x.dark;x.startDate=x.startDate||"";x.endDate=x.endDate||"";
+ x.members.forEach((m,i)=>{m.id=m.id??i+1;m.vals=Object.assign({募集:0,リーグ:0,トロ:0,腕スタ:0,参加:0},m.vals||{});m.excluded=!!m.excluded});
+ return x;
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function contrib(m){return ["募集","リーグ","トロ","腕スタ","参加"].reduce((a,k)=>a+Number(m.vals[k]||0)*Number(state.points[k]||0),0)}
+function periodKey(){
+ const d=new Date(), h=d.getHours();
+ if(h<4)d.setDate(d.getDate()-1);
+ return d.toISOString().slice(0,10);
+}
+function ensureToday(){
+ const k=periodKey();
+ if(state.todayKey!==k){state.todayKey=k;state.todayBase=0;state.todayManualDelta=0;save()}
+}
+function fmt(s){if(!s)return"";const d=new Date(s+"T00:00:00");return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}
+function renderPeriod(){
+ let t="集計日：";
+ if(state.startDate&&state.endDate)t+=`${fmt(state.startDate)}〜${fmt(state.endDate).replace(/^\d+年/,"")}`;
+ else if(state.startDate)t+=`${fmt(state.startDate)}〜`;
+ else if(state.endDate)t+=`〜${fmt(state.endDate).replace(/^\d+年/,"")}`;
+ else t+="—";
+ periodLabel.textContent=t;
+}
+function renderToday(){ensureToday();todayNum.textContent=Math.max(0,state.todayBase+state.todayManualDelta)}
+function addLog(name,item){
+ state.logs.unshift({name,item,time:new Date().toLocaleString("ja-JP",{hour12:false})});
+ state.logs=state.logs.slice(0,5)
+}
+function change(id,k,delta){
+ const m=state.members.find(x=>x.id==id);if(!m||m.excluded)return;
+ const old=Number(m.vals[k]||0),n=Math.max(0,old+delta);
+ if(n===old)return;
+ m.vals[k]=n;
+ if(delta>0)addLog(m.name,k);
+ if(k==="参加"&&delta>0){m._lastPeriod=periodKey();state.todayBase=Math.max(state.todayBase,0);state.todayBase++; }
+ save();render();
+}
+function render(){
+ renderPeriod();renderToday();
+ const body=document.getElementById("memberBody"),sort=sortEl.value;
+ let arr=[...state.members];
+ if(sort==="name")arr.sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+ else if(sort==="contrib")arr.sort((a,b)=>contrib(b)-contrib(a));
+ else arr.sort((a,b)=>(Number(b.vals[sort]||0)-Number(a.vals[sort]||0))||a.name.localeCompare(b.name,"ja"));
+ body.innerHTML=arr.map(m=>`<tr class="${m.excluded?"excluded":""}">
+ <td class="namecell"><div class="name-main">${esc(m.name)}</div><div class="name-actions">
+  <button class="small-action" onclick="renameMember(${m.id})">名前変更</button>
+  <button class="small-action remove" onclick="toggleExclude(${m.id})">${m.excluded?"復帰":"除外"}</button>
+ </div></td>
+ ${["募集","リーグ","トロ","腕スタ","参加"].map(k=>`<td><div class="activity">
+  <button class="mini" onclick="change(${m.id},'${k}',-1)">−</button><span class="value">${m.vals[k]||0}</span><button class="mini plus" onclick="change(${m.id},'${k}',1)">＋</button>
+ </div></td>`).join("")}
+ <td><span class="contrib-value">${contrib(m)}</span></td>
+ </tr>`).join("");
+ renderLogs();loadSettings();
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function renameMember(id){
+ const m=state.members.find(x=>x.id==id);if(!m)return;
+ const n=prompt("新しい名前",m.name);if(n&&n.trim()){const old=m.name;m.name=n.trim();state.logs.forEach(x=>{if(x.name===old)x.name=m.name});save();render()}
+}
+function toggleExclude(id){
+ const m=state.members.find(x=>x.id==id);if(!m)return;
+ m.excluded=!m.excluded;save();render()
+}
+function addMember(){
+ const n=document.getElementById("newName").value.trim();if(!n)return;
+ if(state.members.some(x=>x.name===n)){alert("同じ名前がすでにあります");return}
+ state.members.push({id:Date.now(),name:n,vals:{募集:0,リーグ:0,トロ:0,腕スタ:0,参加:0},excluded:false});
+ document.getElementById("newName").value="";save();render()
+}
+function renderLogs(){
+ const el=document.getElementById("logList");
+ el.innerHTML=state.logs.length?state.logs.map((x,i)=>`<div class="log"><div><b>${esc(x.name)}</b><br><small>${esc(x.item)} ・ ${esc(x.time)}</small></div><button onclick="deleteLog(${i})">この記録を削除</button></div>`).join(""):"<div style='color:var(--muted);font-size:12px'>まだ増加記録はありません。</div>";
+}
+function deleteLog(i){
+ const x=state.logs[i];if(!x)return;
+ const m=state.members.find(v=>v.name===x.name); if(m&&Number(m.vals[x.item]||0)>0)m.vals[x.item]--;
+ state.logs.splice(i,1);save();render()
+}
+function loadSettings(){
+ ["募集","リーグ","トロ","腕スタ","参加"].forEach(k=>{const el=document.getElementById("p"+k);if(el)el.value=state.points[k]});
+ startDate.value=state.startDate;endDate.value=state.endDate;
+ document.body.classList.toggle("dark",state.dark);
+ darkBtn.textContent=state.dark?"☀️ ナイトモードを解除":"🌙 ナイトモード";
+}
+function openManage(){modalBack.classList.add("show");loadSettings()}
+function closeManage(){modalBack.classList.remove("show")}
+const modalBack=document.getElementById("modalBack"),periodLabel=document.getElementById("periodLabel"),todayNum=document.getElementById("todayNum"),sortEl=document.getElementById("sort"),darkBtn=document.getElementById("darkBtn");
+document.getElementById("manageBtn").onclick=openManage;
+document.getElementById("closeModal").onclick=closeManage;
+document.getElementById("addMember").onclick=()=>{openManage();setTimeout(()=>document.getElementById("newName").focus(),50)}
+document.getElementById("addMember2").onclick=addMember;
+document.getElementById("saveDates").onclick=()=>{state.startDate=startDate.value;state.endDate=endDate.value;save();render();alert("集計日を保存しました")}
+document.getElementById("savePoints").onclick=()=>{["募集","リーグ","トロ","腕スタ","参加"].forEach(k=>state.points[k]=Math.max(0,parseInt(document.getElementById("p"+k).value)||0));save();render();alert("貢献度ポイントを保存しました")}
+darkBtn.onclick=()=>{state.dark=!state.dark;save();loadSettings()}
+document.getElementById("todayPlus").onclick=()=>{state.todayManualDelta++;save();renderToday()}
+document.getElementById("todayMinus").onclick=()=>{state.todayManualDelta=Math.max(-state.todayBase,state.todayManualDelta-1);save();renderToday()}
+document.getElementById("todayReset").onclick=()=>{state.todayManualDelta=0;save();renderToday()}
+sortEl.onchange=render;
+document.getElementById("resetAll").onclick=()=>{if(confirm("メンバー・活動・記録・設定をすべて初期化しますか？")){localStorage.removeItem(KEY);state=structuredClone(defaults);save();render();closeManage()}};
+render();
+</script>
+</body>
+</html>
